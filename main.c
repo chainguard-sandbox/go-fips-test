@@ -20,7 +20,8 @@
 //   - microsoft_systemcrypto=1 -> binary uses OpenSSL via the
 //     Microsoft Go fork; suggests verifying with openssl-fips-test.
 //   - GOFIPS140=v1.0.0-c2097c7c -> binary uses the CMVP #5247
-//     validated module (OSC 8 hyperlink to the NIST certificate).
+//     validated module; the symbol table is inspected to report
+//     whether it uses entropy validation #E318.
 //   - otherwise -> falls back to scanning the ELF symbol table for
 //     "crypto/" symbols to decide between non-validated cryptography,
 //     no cryptography (FIPS compliant), or unknown (no symbol table).
@@ -46,6 +47,10 @@
 #define CMVP_URL                                                               \
   "https://csrc.nist.gov/projects/cryptographic-module-validation-program/"    \
   "certificate/5247"
+#define ENTROPY_E318_URL                                                       \
+  "https://csrc.nist.gov/projects/cryptographic-module-validation-program/"    \
+  "entropy-validations/certificate/318"
+#define ENTROPY_SEED_SYMBOL "crypto/internal/entropy/v1%2e0%2e0.Seed"
 
 static const unsigned char BUILDINFO_MAGIC[] = {
     0xff, ' ', 'G', 'o', ' ', 'b', 'u', 'i', 'l', 'd', 'i', 'n', 'f', ':'};
@@ -196,12 +201,13 @@ static const Elf64_Shdr *find_section(const unsigned char *map, size_t size,
   return NULL;
 }
 
-// Scan the ELF .symtab for symbols whose name contains "crypto/".
+// Scan the ELF .symtab for crypto symbols and the Geomys entropy seed symbol.
 static void scan_symbols(const unsigned char *map, size_t size,
-                         const Elf64_Ehdr *eh, bool *has_syms,
-                         bool *has_crypto) {
+                         const Elf64_Ehdr *eh, bool *has_syms, bool *has_crypto,
+                         bool *has_entropy_seed) {
   *has_syms = false;
   *has_crypto = false;
+  *has_entropy_seed = false;
   for (uint16_t i = 0; i < eh->e_shnum; i++) {
     const Elf64_Shdr *sh = shdr_at(map, size, eh, i);
     if (!sh || sh->sh_type != SHT_SYMTAB)
@@ -218,12 +224,15 @@ static void scan_symbols(const unsigned char *map, size_t size,
     for (size_t k = 0; k < count; k++) {
       const Elf64_Sym *sym = (const Elf64_Sym *)(data + k * sizeof(Elf64_Sym));
       const char *name = strtab_str(map, size, eh, sh->sh_link, sym->st_name);
-      if (name && strstr(name, "crypto/")) {
+      if (!name)
+        continue;
+      if (strstr(name, "crypto/"))
         *has_crypto = true;
+      if (strcmp(name, ENTROPY_SEED_SYMBOL) == 0)
+        *has_entropy_seed = true;
+      if (*has_crypto && *has_entropy_seed)
         return;
-      }
     }
-    return;
   }
 }
 
@@ -354,15 +363,29 @@ static int scan_file(const char *file) {
     }
   }
 
+  bool is_geomys = gofips140 && strcmp(gofips140, "v1.0.0-c2097c7c") == 0;
+  bool has_syms = false, has_crypto = false, has_entropy_seed = false;
+  if (is_geomys) {
+    scan_symbols(map, map_size, eh, &has_syms, &has_crypto, &has_entropy_seed);
+  }
+
   printf("\n");
   if (has_ms_crypto) {
     printf("Binary is using OpenSSL, check status with openssl-fips-test\n");
-  } else if (gofips140 && strcmp(gofips140, "v1.0.0-c2097c7c") == 0) {
-    printf("Binary is using \x1b]8;;%s\x1b\\CMVP #5247\x1b]8;;\x1b\\\n",
-           CMVP_URL);
+  } else if (is_geomys) {
+    if (has_entropy_seed) {
+      printf("Binary is using \x1b]8;;%s\x1b\\CMVP #5247\x1b]8;;\x1b\\ "
+             "with kernel-independent entropy source "
+             "\x1b]8;;%s\x1b\\#E318\x1b]8;;\x1b\\\n",
+             CMVP_URL, ENTROPY_E318_URL);
+    } else {
+      printf("Binary is using \x1b]8;;%s\x1b\\CMVP #5247\x1b]8;;\x1b\\ "
+             "with no assurance of the minimum strength of generated SSPs "
+             "(e.g. keys)\n",
+             CMVP_URL);
+    }
   } else {
-    bool has_syms, has_crypto;
-    scan_symbols(map, map_size, eh, &has_syms, &has_crypto);
+    scan_symbols(map, map_size, eh, &has_syms, &has_crypto, &has_entropy_seed);
     if (has_syms && has_crypto) {
       printf("Binary is using non-validated cryptography. (verified symbols "
              "table)\n");

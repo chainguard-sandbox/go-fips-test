@@ -45,7 +45,7 @@ go-fips-test: go1.26.3
 	build	vcs.time=2026-05-18T10:06:33Z
 	build	vcs.modified=true
 
-Binary is using CMVP #5247
+Binary is using CMVP #5247 with no assurance of the minimum strength of generated SSPs (e.g. keys)
 ```
 
 ## Systemcrypto binaries
