@@ -123,3 +123,11 @@ Binary that does not use a cryptographic module. Note that this binary is built 
 
 Binary does not use a validated cryptographic module. Unknown if cryptography is in use. (no symbols table)
 ```
+
+## Not a go binary
+
+Binary that is not written in Go language, for example an ELF C binary
+
+```shell
+go-fips-test: missing .go.buildinfo section
+```
