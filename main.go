@@ -13,7 +13,8 @@
 //   - microsoft_systemcrypto=1 → binary uses OpenSSL via the Microsoft
 //     Go fork; suggests verifying status with openssl-fips-test.
 //   - GOFIPS140=v1.0.0-c2097c7c → binary uses the CMVP #5247 validated
-//     module (rendered as an OSC 8 hyperlink to the NIST certificate).
+//     module; the symbol table is inspected to report whether it uses
+//     entropy validation #E318.
 //   - otherwise → falls back to inspecting the ELF/PE/Mach-O symbol
 //     table for "crypto/" symbols to decide between "using
 //     non-validated cryptography", "not using any cryptography", or
@@ -28,6 +29,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+)
+
+const (
+	cmvp5247URL       = "https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/5247"
+	entropyE318URL    = "https://csrc.nist.gov/projects/cryptographic-module-validation-program/entropy-validations/certificate/318"
+	entropySeedSymbol = "crypto/internal/entropy/v1%2e0%2e0.Seed"
 )
 
 func main() {
@@ -83,22 +90,30 @@ func scanFile(file string) bool {
 		printLine(line, hasMSCrypto)
 	}
 
+	isGeomys := gofips140 == "v1.0.0-c2097c7c"
+	var syms symbolInfo
+	if isGeomys {
+		syms = scanSymbols(file)
+	}
+
 	fmt.Println()
 	switch {
 	case hasMSCrypto:
 		fmt.Println("Binary is using OpenSSL, check status with openssl-fips-test")
-	case gofips140 == "v1.0.0-c2097c7c":
-		link := osc8(
-			"https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/5247",
-			"CMVP #5247",
-		)
-		fmt.Printf("Binary is using %s\n", link)
+	case isGeomys:
+		cmvpLink := osc8(cmvp5247URL, "CMVP #5247")
+		if syms.hasEntropySeed {
+			entropyLink := osc8(entropyE318URL, "#E318")
+			fmt.Printf("Binary is using %s with kernel-independent entropy source %s\n", cmvpLink, entropyLink)
+		} else {
+			fmt.Printf("Binary is using %s with no assurance of the minimum strength of generated SSPs (e.g. keys)\n", cmvpLink)
+		}
 	default:
-		hasSyms, hasCrypto := cryptoSymbols(file)
+		syms = scanSymbols(file)
 		switch {
-		case hasSyms && hasCrypto:
+		case syms.hasSyms && syms.hasCrypto:
 			fmt.Println("Binary is using non-validated cryptography. (verified symbols table)")
-		case hasSyms && !hasCrypto:
+		case syms.hasSyms && !syms.hasCrypto:
 			fmt.Println("Binary is not using any cryptography, which is FIPS compliant. (verified symbols table)")
 		default:
 			fmt.Println("Binary does not use a validated cryptographic module. Unknown if cryptography is in use. (no symbols table)")
@@ -107,48 +122,61 @@ func scanFile(file string) bool {
 	return true
 }
 
-// cryptoSymbols inspects the binary's symbol table (ELF / PE / Mach-O)
-// and reports whether a symbol table was found and whether any symbol
-// name contains "crypto/".
-func cryptoSymbols(file string) (hasSyms, hasCrypto bool) {
+type symbolInfo struct {
+	hasSyms        bool
+	hasCrypto      bool
+	hasEntropySeed bool
+}
+
+func (si *symbolInfo) inspect(name string) {
+	if strings.Contains(name, "crypto/") {
+		si.hasCrypto = true
+	}
+	if name == entropySeedSymbol {
+		si.hasEntropySeed = true
+	}
+}
+
+// scanSymbols inspects the binary's symbol table (ELF / PE / Mach-O)
+// and reports whether a symbol table was found, whether any symbol name
+// contains "crypto/", and whether the Geomys entropy seed symbol exists.
+func scanSymbols(file string) symbolInfo {
+	var si symbolInfo
 	if f, err := elf.Open(file); err == nil {
 		defer f.Close() // nolint: errcheck
 		syms, err := f.Symbols()
 		if err != nil || len(syms) == 0 {
-			return false, false
+			return si
 		}
+		si.hasSyms = true
 		for _, s := range syms {
-			if strings.Contains(s.Name, "crypto/") {
-				return true, true
-			}
+			si.inspect(s.Name)
 		}
-		return true, false
+		return si
 	}
 	if f, err := pe.Open(file); err == nil {
 		defer f.Close() // nolint: errcheck
 		if len(f.Symbols) == 0 {
-			return false, false
+			return si
 		}
+		si.hasSyms = true
 		for _, s := range f.Symbols {
-			if strings.Contains(s.Name, "crypto/") {
-				return true, true
-			}
+			si.inspect(s.Name)
 		}
-		return true, false
+		return si
 	}
 	if f, err := macho.Open(file); err == nil {
 		defer f.Close() // nolint: errcheck
 		if f.Symtab == nil || len(f.Symtab.Syms) == 0 {
-			return false, false
+			return si
 		}
+		si.hasSyms = true
 		for _, s := range f.Symtab.Syms {
-			if strings.Contains(s.Name, "crypto/") {
-				return true, true
-			}
+			si.inspect(s.Name)
 		}
-		return true, false
+		return si
 	}
-	return false, false
+	return si
 }
 
 // osc8 wraps text in an OSC 8 hyperlink escape sequence so terminals
