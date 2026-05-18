@@ -1,0 +1,16 @@
+# SPDX-FileCopyrightText: 2026 Chainguard, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+spec:
+  authorities:
+    - keyless:
+        url: https://fulcio.sigstore.dev
+        identities:
+          - subjectRegExp: .+@chainguard.dev$
+            issuer: https://accounts.google.com
+      ctlog:
+        url: https://rekor.sigstore.dev
+  # Allow Github verified ssh, gpg, and smime signatures
+  github:
+    verified: true
