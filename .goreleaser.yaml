@@ -1,0 +1,40 @@
+project_name: go-fips-test
+version: 2
+
+archives:
+  - formats: [ 'binary' ]
+    name_template: "{{ .Binary }}"
+
+builds:
+  - id: go-fips-test
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - '-w'
+    goarm:
+      - 7
+    goamd64:
+      - v2
+    goppc64:
+      - power10
+    goos:
+      - darwin
+      - freebsd
+      - linux
+      - windows
+    goarch:
+      - amd64
+      - arm
+      - arm64
+      - mips64
+      - ppc64le
+      - s390x
+    ignore:
+      - goos: darwin
+        goarch: amd64
+      - goos: freebsd
+        goarch: arm
+      - goos: freebsd
+        goarch: arm64
