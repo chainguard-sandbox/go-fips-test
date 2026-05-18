@@ -100,11 +100,7 @@ jobs:
         if: steps.check.outputs.need_release == 'yes'
         with:
           version: latest
-          install-only: true
-
-      - name: Release
-        if: steps.check.outputs.need_release == 'yes'
-        run: make release
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ steps.check.outputs.existing_tag || steps.create_tag.outputs.new_tag }}
+          GORELEASER_CURRENT_TAG: ${{ steps.check.outputs.existing_tag || steps.create_tag.outputs.new_tag }}
