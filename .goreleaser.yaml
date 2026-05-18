@@ -9,6 +9,9 @@ archives:
   - files:
       - LICENSE
     wrap_in_directory: true
+    format_overrides:
+      - goos: windows
+        formats: [zip]
 
 builds:
   - id: go-fips-test
