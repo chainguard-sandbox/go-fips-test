@@ -1,3 +1,9 @@
+<!--
+SPDX-FileCopyrightText: 2026 Chainguard, Inc
+
+SPDX-License-Identifier: Apache-2.0
+-->
+
 # go-fips-test
 Test that Go binary is using a FIPS validated cryptographic module
 

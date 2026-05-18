@@ -17,6 +17,9 @@ install: go-fips-test
 	install -d $(DESTDIR)$(BINDIR)
 	install -m 0755 go-fips-test $(DESTDIR)$(BINDIR)/go-fips-test
 
+annotate:
+	reuse annotate --copyright "Chainguard, Inc" --license Apache-2.0 --recursive .
+
 clean:
 	rm -f go-fips-test
 

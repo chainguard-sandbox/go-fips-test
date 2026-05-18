@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2026 Chainguard, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
 project_name: go-fips-test
 version: 2
 
