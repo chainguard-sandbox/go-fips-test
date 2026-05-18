@@ -5,12 +5,14 @@ SPDX-License-Identifier: Apache-2.0
 -->
 
 # go-fips-test
+
 Test that Go binary is using a FIPS validated cryptographic module
 
 Two implementation available in portable C and Go.
 
-This utilitiy is able to identify binaries that use:
-- [Geomys](https://go.dev/doc/security/fips140] cryptographic module
+This utility is able to identify binaries that use:
+
+- [Geomys](https://go.dev/doc/security/fips140) cryptographic module
 - [microsoft/go](https://github.com/microsoft/go)'s systemcryptography experiment and thus access FIPS crypgraphic module via OpenSSL.
 - no cryptrography, if build preserves symbols tables (compiled without `-ldflags`, or with `-ldflags -w`, specifically without using `-s`)
 
@@ -18,9 +20,9 @@ Example outputs are below
 
 ## Geomys binaries
 
-Example output for a go binary that is compiled using [Geomys](https://go.dev/doc/security/fips140] cryptographic module
+Example output for a go binary that is compiled using [Geomys](https://go.dev/doc/security/fips140) cryptographic module
 
-```
+```shell
 go-fips-test: go1.26.3
 	path	github.com/chainguard-sandbox/go-fips-test
 	mod	github.com/chainguard-sandbox/go-fips-test	v0.0.0-20260518100633-ff1998689a15+dirty
@@ -50,7 +52,7 @@ Binary is using CMVP #5247
 
 Example output for a go binary that is compiled using [microsoft/go](https://github.com/microsoft/go) toolchain
 
-```
+```shell
 go-fips-test: go1.26.3
 	path	github.com/chainguard-sandbox/go-fips-test
 	mod	github.com/chainguard-sandbox/go-fips-test	(devel)
@@ -76,7 +78,7 @@ Binary is using OpenSSL, check status with openssl-fips-test
 
 Example output for a go binary that is compiled with a symbols table and does not use any cryptography
 
-```
+```shell
 go-fips-test: go1.26.3
 	path	github.com/chainguard-sandbox/go-fips-test
 	mod	github.com/chainguard-sandbox/go-fips-test	v0.0.0-20260518100633-ff1998689a15+dirty	
@@ -99,7 +101,7 @@ Binary is not using any cryptography, which is FIPS compliant. (verified symbols
 
 Binary that does not use a cryptographic module. Note that this binary is built without symbols table (`-ldflags="-w -s"`), hence symbols table inspection cannot be performed.
 
-```
+```shell
 ./go-fips-test: go1.26.3
 	path	github.com/chainguard-sandbox/go-fips-test
 	mod	github.com/chainguard-sandbox/go-fips-test	v0.0.0-20260518100633-ff1998689a15+dirty

@@ -10,6 +10,9 @@ BINDIR ?= $(PREFIX)/bin
 
 all: go-fips-test
 
+goreleaser:
+	goreleaser build --snapshot --clean
+
 go-fips-test: main.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<
 
@@ -21,6 +24,6 @@ annotate:
 	reuse annotate --copyright "Chainguard, Inc" --license Apache-2.0 --recursive .
 
 clean:
-	rm -f go-fips-test
+	rm -rf go-fips-test dist/
 
 .PHONY: all install clean

@@ -1,0 +1,47 @@
+# SPDX-FileCopyrightText: 2026 Chainguard, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# This is adapted from previous files in wolfi-dev/os, enterprise-packages, and extra-packages.
+# See https://eng.inky.wtf/docs/technical/git/pre-commit for info on how to edit this file.
+repos:
+  - repo: https://github.com/golangci/misspell
+    rev: b565578a5ec9b815331bdae8f588021f7696ec6f  # frozen: v0.8.0
+    hooks:
+      - id: misspell
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: forbid-submodules
+      - id: check-added-large-files
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-symlinks
+      - id: detect-private-key
+  - repo: https://github.com/DavidAnson/markdownlint-cli2
+    rev: 3766ad839ad3a74558031510b3bc9872bb1d9980  # frozen: v0.22.0
+    hooks:
+      - id: markdownlint-cli2
+        files: '\.md$'
+  - repo: https://github.com/checkmake/checkmake
+    rev: 59931d556f8f5cf4fbacf2c8390a8122ef7a881d  # frozen: v0.3.2
+    hooks:
+      - id: checkmake
+        args:
+          - "--config"
+          - ".checkmake.ini"
+  - repo: https://github.com/fsfe/reuse-tool
+    rev: a1bb792acda6fd0724936b4ebbdbc8eceb9c0459 # frozen: v6.2.0
+    hooks:
+      - id: reuse
+  - repo: https://github.com/golangci/golangci-lint
+    rev: c0d3ddc9cf3faa61a4e378e879ece580256d76e5 # frozen: v2.12.2
+    hooks:
+      - id: golangci-lint-full
+      - id: golangci-lint-fmt
+      - id: golangci-lint-config-verify
+  - repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: dd18dad857d6133e90bbe478f4f2f22ec0030269 # frozen: v22.1.5
+    hooks:
+    -   id: clang-format

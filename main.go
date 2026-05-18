@@ -112,7 +112,7 @@ func scanFile(file string) bool {
 // name contains "crypto/".
 func cryptoSymbols(file string) (hasSyms, hasCrypto bool) {
 	if f, err := elf.Open(file); err == nil {
-		defer f.Close()
+		defer f.Close() // nolint: errcheck
 		syms, err := f.Symbols()
 		if err != nil || len(syms) == 0 {
 			return false, false
@@ -125,7 +125,7 @@ func cryptoSymbols(file string) (hasSyms, hasCrypto bool) {
 		return true, false
 	}
 	if f, err := pe.Open(file); err == nil {
-		defer f.Close()
+		defer f.Close() // nolint: errcheck
 		if len(f.Symbols) == 0 {
 			return false, false
 		}
@@ -137,7 +137,7 @@ func cryptoSymbols(file string) (hasSyms, hasCrypto bool) {
 		return true, false
 	}
 	if f, err := macho.Open(file); err == nil {
-		defer f.Close()
+		defer f.Close() // nolint: errcheck
 		if f.Symtab == nil || len(f.Symtab.Syms) == 0 {
 			return false, false
 		}

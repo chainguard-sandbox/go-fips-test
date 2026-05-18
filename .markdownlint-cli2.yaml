@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 Chainguard, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Disable some built-in rules
+config:
+  MD010:
+    code_blocks: false
+  MD013: false
+
+# Fix any fixable errors
+fix: true
