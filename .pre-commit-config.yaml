@@ -20,7 +20,7 @@ repos:
       - id: check-symlinks
       - id: detect-private-key
   - repo: https://github.com/DavidAnson/markdownlint-cli2
-    rev: 996abf60411a8d954288ac9856aae7602b80cbda  # frozen: v0.22.1
+    rev: 06f92c99e930c11230426b5edd775021d25e08a8  # frozen: v0.23.1
     hooks:
       - id: markdownlint-cli2
         files: '\.md$'
